@@ -111,15 +111,16 @@ public class SimManager : MonoBehaviour {
     }
 
     public InfoData GetInfo (Vector3 position, float radius) {
+		radius *= radius;
         List<GameObject> tempR = new List<GameObject>();
         for (int i = 0; i < resources.Count; i++) {
-            if (Vector3.Distance(position, resources[i].transform.position) < radius) {
+            if (Vector3.SqrMagnitude(position - resources[i].transform.position) < radius) {
                 tempR.Add(resources[i]);
             }
         }
         List<GameObject> tempA = new List<GameObject>();
         for (int i = 0; i < agents.Count; i++) {
-            if (Vector3.Distance(position, agents[i].transform.position) < radius) {
+            if (Vector3.SqrMagnitude(position - agents[i].transform.position) < radius) {
                 tempA.Add(agents[i]);
             }
         }
