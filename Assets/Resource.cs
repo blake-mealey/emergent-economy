@@ -19,7 +19,7 @@ public class Resource : MonoBehaviour {
     }
 
     void Update() {
-        transform.position = Vector3.Lerp(startPos,startPos - new Vector3(0,-4f,0), 1f-(resourcesLeft/startingResourceAmount));
+        transform.position = Vector3.Lerp(startPos,startPos - new Vector3(0,4f,0), 1f-(resourcesLeft/startingResourceAmount));
     }
 
     public void initialize (int nid, float nresources, int nminerLimit) {
@@ -30,7 +30,7 @@ public class Resource : MonoBehaviour {
     }
 
     public bool requestMiningSlot () {
-        if (minerLimit > miners || resourcesLeft == 0f) {
+        if (minerLimit > miners && resourcesLeft > 0f) {
             miners++;
             return true;
         }
@@ -43,9 +43,11 @@ public class Resource : MonoBehaviour {
 
     public float mineResource (float amount) {
         if (resourcesLeft - amount < 0f) {
+			float temp = resourcesLeft;
             resourcesLeft = 0;
-            return resourcesLeft;
+            return temp;
         }
+		resourcesLeft -= amount;
         return amount;
     }
 }

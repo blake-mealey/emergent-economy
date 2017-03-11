@@ -10,6 +10,7 @@ public class AgentScript : MonoBehaviour {
     public float speedMod = 1f;
     public float infoRadius = 10f;
     public float tradeRadius = 5f;
+	public float mineRate = 5f;
 
     private bool randomMovement = true;
     private float currentTime = 0f;
@@ -26,6 +27,8 @@ public class AgentScript : MonoBehaviour {
     private GameObject[] closeAgents;
     private GameObject[] closeResources;
 
+	private bool permissionToMine = false; 
+	private GameObject targetResource;
 	public GameObject explosionEffect;
 
 	// Use this for initialization
@@ -71,43 +74,57 @@ public class AgentScript : MonoBehaviour {
 
 
 		//Determine if I want to trade by the total number of resources I am currently carrying.
-		if (totalResources < maxResourceCount / 10f) {
+		if (targetResource != null || totalResources < maxResourceCount) {
 
-			//Move to a resource
-			if (closeResources.Length > 0) {
+			//Select resource
+			if (closeResources.Length > 0 && targetResource == null) {
 				randomMovement = false;
-				GameObject myTargetResource = null;
 				float dist = float.MaxValue;
 
 				//Go to closest resource that is not my resource
 				for (int j = 0; j < closeResources.Length; j++) {
 					if (closeResources[j].GetComponent<Resource>().id != id && Vector3.SqrMagnitude(transform.position - closeResources[j].transform.position) < dist) {
 						dist = Vector3.SqrMagnitude(transform.position - closeResources[j].transform.position);
-						myTargetResource = closeResources[j];
+						targetResource = closeResources[j];
+					}
+				}
+			}
+
+			//Acutally mine the resource
+			if (targetResource != null) {
+				movementDir = (targetResource.transform.position - transform.position).normalized;
+
+				if (Vector3.Distance(new Vector3(targetResource.transform.position.x,transform.position.y, targetResource.transform.position.z), transform.position) < 3f) { //Are we close enough to gather?
+					if (permissionToMine && totalResources < maxResourceCount) {
+						Resource resource = targetResource.GetComponent<Resource>();
+						float amountMined = resource.mineResource(mineRate * Time.deltaTime);
+						totalResources += amountMined;
+						resources[resource.id] += amountMined;
+					} else if (!permissionToMine && totalResources < maxResourceCount) {
+						permissionToMine = targetResource.GetComponent<Resource>().requestMiningSlot();
+					} else if (permissionToMine) {
+						targetResource.GetComponent<Resource>().releaseMiningSlot();
+						targetResource = null;
+						permissionToMine = false;
 					}
 				}
 
-				if (myTargetResource == null) randomMovement = true;
-				else movementDir = (myTargetResource.transform.position - transform.position).normalized;//Move to the resource
+			} else { //Or wander randomely
+				Wander();
 			}
-
-			//Wander
-			if (randomMovement) {
-				currentTime += Time.deltaTime;
-				if (currentTime > timePerSearchDir) {
-					currentTime = 0;
-					movementDir = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f)).normalized;
-				}
-			}
-
-
 		} else {
-
-
-
+			Wander();
 		}
 
         transform.localScale = new Vector3(health/50f+0.25f,1,health/50f+0.25f);
+	}
+
+	private void Wander() {
+		currentTime += Time.deltaTime;
+		if (currentTime > timePerSearchDir) {
+			currentTime = 0;
+			movementDir = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f)).normalized;
+		}
 	}
 
     // FixedUpdate is called every physics update
