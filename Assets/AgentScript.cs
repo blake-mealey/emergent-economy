@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 [RequireComponent (typeof(ResourceValueTable))]
 public class AgentScript : MonoBehaviour {
@@ -30,6 +31,7 @@ public class AgentScript : MonoBehaviour {
 	private bool permissionToMine = false; 
 	private GameObject targetResource;
 	public GameObject explosionEffect;
+	public Text resourceText;
 
 	// Use this for initialization
 	void Start () {
@@ -44,7 +46,7 @@ public class AgentScript : MonoBehaviour {
 	
     IEnumerator HealthDec () {
         while (health > 0) {
-            health -= UnityEngine.Random.Range(0f, 5f);
+            //health -= UnityEngine.Random.Range(0f, 5f);
             yield return new WaitForSeconds(1f);
         }
     }
@@ -74,7 +76,7 @@ public class AgentScript : MonoBehaviour {
 
 
 		//Determine if I want to trade by the total number of resources I am currently carrying.
-		if (targetResource != null || totalResources < maxResourceCount) {
+		if (totalResources < maxResourceCount) {
 
 			//Select resource
 			if (closeResources.Length > 0 && targetResource == null) {
@@ -93,22 +95,6 @@ public class AgentScript : MonoBehaviour {
 			//Acutally mine the resource
 			if (targetResource != null) {
 				movementDir = (targetResource.transform.position - transform.position).normalized;
-
-				if (Vector3.Distance(new Vector3(targetResource.transform.position.x,transform.position.y, targetResource.transform.position.z), transform.position) < 3f) { //Are we close enough to gather?
-					if (permissionToMine && totalResources < maxResourceCount) {
-						Resource resource = targetResource.GetComponent<Resource>();
-						float amountMined = resource.mineResource(mineRate * Time.deltaTime);
-						totalResources += amountMined;
-						resources[resource.id] += amountMined;
-					} else if (!permissionToMine && totalResources < maxResourceCount) {
-						permissionToMine = targetResource.GetComponent<Resource>().requestMiningSlot();
-					} else if (permissionToMine) {
-						targetResource.GetComponent<Resource>().releaseMiningSlot();
-						targetResource = null;
-						permissionToMine = false;
-					}
-				}
-
 			} else { //Or wander randomely
 				Wander();
 			}
@@ -117,6 +103,7 @@ public class AgentScript : MonoBehaviour {
 		}
 
         transform.localScale = new Vector3(health/50f+0.25f,1,health/50f+0.25f);
+		resourceText.text = totalResources.ToString("f2");
 	}
 
 	private void Wander() {
@@ -155,4 +142,26 @@ public class AgentScript : MonoBehaviour {
         id = newID;
         GetComponent<Renderer>().material.color = myColor;
     }
+
+	void OnCollisionStay(Collision collision) {
+		if (collision.gameObject.CompareTag("resource") && totalResources < maxResourceCount) {
+			//Do I want to collect from the resource?
+			Resource resource = collision.gameObject.GetComponent<Resource>();
+			float toMine = mineRate * Time.deltaTime;
+			float amountMined = resource.mineResource(toMine + totalResources > maxResourceCount ? maxResourceCount - totalResources : toMine);
+			totalResources += amountMined;
+			resources[resource.id] += amountMined;
+		}
+	}
+
+	void OnCollisionEnter(Collision collision) {
+		if (collision.gameObject.CompareTag("resource") && totalResources < maxResourceCount) {
+			//Do I want to collect from the resource?
+			Resource resource = collision.gameObject.GetComponent<Resource>();
+			float toMine = mineRate * Time.deltaTime;
+			float amountMined = resource.mineResource(toMine + totalResources > maxResourceCount ? maxResourceCount - totalResources : toMine);
+			totalResources += amountMined;
+			resources[resource.id] += amountMined;
+		}
+	}
 }
