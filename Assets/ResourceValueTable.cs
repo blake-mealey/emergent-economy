@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ResourceValueTable : MonoBehaviour {
+public class ResourceValueTable {
 
     public float[,] resourceValues;
     private float adjustmentRate = 0.1f; //How quickly value adjustments should be made
 
 	// Use this for initialization
-	void Start () {
+	public ResourceValueTable () {
 
         //Initial setup of the resource table
         int temp = SimManager.instance.numberOfGroups;
@@ -35,4 +35,19 @@ public class ResourceValueTable : MonoBehaviour {
             adjustmentRate = rate;
         }
     }
+
+	//returns the percieved value of resource1 to resource2. 
+	public float getRatio (int rid1, int rid2) {
+		return resourceValues[rid1, rid2];
+	}
+
+	public void print() {
+		string mystring = "";
+		for (int i = 0; i < resourceValues.GetLength(0); i++) {
+			for (int j = 0; j < resourceValues.GetLength(0); j++) {
+				mystring += i + " -> " + j + ": " + resourceValues[i, j] + "\n";
+			}
+		}
+		Debug.Log(mystring);
+	}
 }

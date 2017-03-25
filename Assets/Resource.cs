@@ -19,7 +19,14 @@ public class Resource : MonoBehaviour {
     }
 
     void Update() {
-        transform.position = Vector3.Lerp(startPos,startPos - new Vector3(0,4f,0), 1f-(resourcesLeft/startingResourceAmount));
+        
+
+		if (resourcesLeft <= 0) {
+			SimManager.instance.DeregisterResource(gameObject);
+			transform.position = startPos - new Vector3(0, 5f, 0);
+		} else {
+			transform.position = Vector3.Lerp(startPos, startPos - new Vector3(0, 4f, 0), 1f - (resourcesLeft / startingResourceAmount));
+		}
     }
 
     public void initialize (int nid, float nresources, int nminerLimit) {
@@ -50,4 +57,6 @@ public class Resource : MonoBehaviour {
 		resourcesLeft -= amount;
         return amount;
     }
+
+	public bool isEmpty() { return resourcesLeft <= 0; }
 }

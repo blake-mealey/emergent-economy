@@ -22,10 +22,14 @@ public class SimManager : MonoBehaviour {
     private List<GameObject> agents = new List<GameObject>();
     private List<GameObject> resources = new List<GameObject>();
     private Color[] colors;
+
+	private ResourceValueTable globalTable;
+
 	// Use this for initialization
 	void Start () {
 
         instance = this;
+		globalTable = new ResourceValueTable();
 
         if (numberOfGroups <= 0) numberOfGroups = 1;
         if (numberOfAgentsPerGroup <= 0) numberOfAgentsPerGroup = 1;
@@ -102,13 +106,28 @@ public class SimManager : MonoBehaviour {
         }
     }
 
-    public void RegisterAgent (GameObject agent) {
+	public void updateTradeRatio (int rid1, int rid2, float ratio, Vector3 position) {
+		globalTable.UpdateValue(rid1, 1f, rid2, ratio);
+		for (int i = 0; i < agents.Count; i++) {
+			if (Vector3.Distance(agents[i].transform.position, position) < 15f) {
+				agents[i].GetComponent<AgentScript>().myValueTable.UpdateValue(rid1, 1f, rid2, ratio);
+			}
+		}
+		globalTable.print();
+		print(agents.Count);
+	}
+
+	public void RegisterAgent (GameObject agent) {
         agents.Add(agent);
     }
 
     public void DeregisterAgent (GameObject agent) {
         agents.Remove(agent);
     }
+
+	public void DeregisterResource (GameObject resource) {
+		resources.Remove(resource);
+	}
 
     public InfoData GetInfo (Vector3 position, float radius) {
 		radius *= radius;
