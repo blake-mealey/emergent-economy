@@ -22,6 +22,7 @@ public class AgentScript : MonoBehaviour {
     public float[] resources;
 	public float totalResources = 0;
     public ResourceValueTable myValueTable;
+	public GameObject resourceMonitor;
 
     private GameObject[] closeAgents;
     private GameObject[] closeResources;
@@ -29,7 +30,6 @@ public class AgentScript : MonoBehaviour {
 	private bool permissionToMine = false; 
 	private GameObject targetResource;
 	public GameObject explosionEffect;
-	public Text resourceText;
 
 	private GameObject targetTradePartner;
 	public bool inTrade = false; //Used by other agents to determine if I am already trading
@@ -38,16 +38,21 @@ public class AgentScript : MonoBehaviour {
 	enum Modes { Gather, Trade};
 	private Modes mode = Modes.Gather;
 
+	public bool dead = false;
+
 	// Use this for initialization
 	void Start () {
 
-        resources = new float[SimManager.instance.numberOfGroups];
+		resources = new float[SimManager.instance.numberOfGroups];
 		myValueTable = new ResourceValueTable();
 
 		currentTime = timePerSearchDir;
         SimManager.instance.RegisterAgent(this.gameObject);
 		StartCoroutine(HealthDec());
         StartCoroutine(LookAround());
+
+		GameObject rm = Instantiate(resourceMonitor);
+		rm.GetComponent<ResourceMonitor>().myAgent = this;
 	}
 	
     IEnumerator HealthDec () {
@@ -64,11 +69,15 @@ public class AgentScript : MonoBehaviour {
 			closeAgents = data.agents;
 			closeResources = data.resources;
             yield return new WaitForSeconds(0.5f);
+
+			if (dead) break;
         }
     }
 
 	// Update is called once per frame
 	void Update () {
+		if (dead) return;
+
 
         if (health <= 0) Die();
         if (health >= 100) Reproduce();
@@ -161,7 +170,6 @@ public class AgentScript : MonoBehaviour {
 
 		//This happens regardless of anything else
         transform.localScale = new Vector3(health/50f+0.25f,1,health/50f+0.25f);
-		resourceText.text = totalResources.ToString("f2");
 	}
 
 	private void Wander() {
@@ -185,7 +193,7 @@ public class AgentScript : MonoBehaviour {
         SimManager.instance.DeregisterAgent(this.gameObject);
 		GameObject explosion = (GameObject)Instantiate(explosionEffect, transform.position, Quaternion.identity);
 		explosion.GetComponent<ParticleSystem>().startColor = GetComponent<Renderer>().material.color;
-        Destroy(gameObject);
+		gameObject.SetActive(false);
     }
 
     //Called to duplicate the agent
@@ -209,6 +217,8 @@ public class AgentScript : MonoBehaviour {
 			float amountMined = resource.mineResource(toMine + totalResources > maxResourceCount ? maxResourceCount - totalResources : toMine);
 			totalResources += amountMined;
 			resources[resource.id] += amountMined;
+		} else if (!inTrade && collision.gameObject == targetTradePartner && !targetTradePartner.GetComponent<AgentScript>().inTrade) {
+			initiateTrade(collision.gameObject);
 		}
 	}
 
@@ -241,11 +251,11 @@ public class AgentScript : MonoBehaviour {
 			float ratio = myValueTable.getRatio(id, otherAgent.id);
 			ratio += ratio * (health - 40f) / 100f;
 			if (otherAgent.recieveTradeOffer(id, otherAgent.id, ratio)) {
-				//print("deal made: " + id + "->" + otherAgent.id + ": " + ratio);
+				print("deal made: " + id + "->" + otherAgent.id + ": " + ratio);
 				processTrade(id, otherAgent.id, ratio, otherAgent);
 				SimManager.instance.updateTradeRatio(id, otherAgent.id, ratio, transform.position);
 			} else {
-				//print("no deal made: " + ratio);
+				print("no deal made: " + ratio);
 			}
 			otherAgent.endTrade();
 			endTrade();
@@ -271,9 +281,9 @@ public class AgentScript : MonoBehaviour {
 	public bool recieveTradeOffer (int rid1, int rid2, float ratio) {
 
 		float acceptableRatio = myValueTable.getRatio(rid1, rid2);
-		acceptableRatio += acceptableRatio * (45 - health) / 100f;
+		acceptableRatio += acceptableRatio * (75 - health) / 100f;
 
-		//print("Acceptable ratio: " + acceptableRatio);
+		print("Acceptable ratio: " + acceptableRatio);
 		//If they offer a better ratio than what I want, accept.
 		if (ratio < acceptableRatio) return true;
 

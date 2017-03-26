@@ -5,7 +5,7 @@ using UnityEngine;
 public class ResourceValueTable {
 
     public float[,] resourceValues;
-    private float adjustmentRate = 0.1f; //How quickly value adjustments should be made
+    private float adjustmentRate = 0.2f; //How quickly value adjustments should be made
 
 	// Use this for initialization
 	public ResourceValueTable () {

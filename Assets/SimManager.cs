@@ -21,7 +21,7 @@ public class SimManager : MonoBehaviour {
 
     private List<GameObject> agents = new List<GameObject>();
     private List<GameObject> resources = new List<GameObject>();
-    private Color[] colors;
+    public Color[] colors;
 
 	private ResourceValueTable globalTable;
 
