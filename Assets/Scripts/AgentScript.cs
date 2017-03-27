@@ -27,7 +27,6 @@ public class AgentScript : MonoBehaviour {
     private GameObject[] closeAgents;
     private GameObject[] closeResources;
 
-	private bool permissionToMine = false; 
 	private GameObject targetResource;
 	public GameObject explosionEffect;
 
@@ -44,6 +43,9 @@ public class AgentScript : MonoBehaviour {
 	void Start () {
 
 		resources = new float[SimManager.instance.numberOfGroups];
+		totalResources = 0;
+		inTrade = false;
+
 		myValueTable = new ResourceValueTable();
 
 		currentTime = timePerSearchDir;
@@ -80,7 +82,7 @@ public class AgentScript : MonoBehaviour {
 
 
         if (health <= 0) Die();
-        if (health >= 80) Reproduce();
+        if (health >= 90) Reproduce();
 
 		//Need to ask a few things in order:
 		// 1. Do I want to gather or trade?
@@ -96,6 +98,7 @@ public class AgentScript : MonoBehaviour {
 		if (totalResources < desiredResourceLevel) {
 			mode = Modes.Gather;
 		} else {
+			targetResource = null;
 			mode = Modes.Trade;
 		}
 
@@ -191,6 +194,7 @@ public class AgentScript : MonoBehaviour {
 
     //Called to destory the agent
     private void Die () {
+		dead = true;
         SimManager.instance.DeregisterAgent(this.gameObject);
 		GameObject explosion = (GameObject)Instantiate(explosionEffect, transform.position, Quaternion.identity);
 		explosion.GetComponent<ParticleSystem>().startColor = GetComponent<Renderer>().material.color;
