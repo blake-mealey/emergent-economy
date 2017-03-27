@@ -80,7 +80,7 @@ public class AgentScript : MonoBehaviour {
 
 
         if (health <= 0) Die();
-        if (health >= 100) Reproduce();
+        if (health >= 80) Reproduce();
 
 		//Need to ask a few things in order:
 		// 1. Do I want to gather or trade?
@@ -139,7 +139,7 @@ public class AgentScript : MonoBehaviour {
 					if (closeAgents[k] == null) continue;
 
 					AgentScript tempAgent = closeAgents[k].GetComponent<AgentScript>();
-					if (!tempAgent.inTrade) {
+					if (!tempAgent.inTrade && !tempAgent.dead) {
 						// Take the max of "my resource they have" and "their resource I have".
 						float max = tempAgent.resources[id];
 						max = max > resources[tempAgent.id] ? resources[tempAgent.id] : max;
@@ -156,7 +156,8 @@ public class AgentScript : MonoBehaviour {
 			//Move to that person
 			if (targetTradePartner != null) {
 				//If our current target gets too far away or gets into a trade before we get there, move to a new target.
-				if (Vector3.Distance(transform.position, targetTradePartner.transform.position) > 20f || targetTradePartner.GetComponent<AgentScript>().inTrade) targetTradePartner = null;
+				AgentScript temp = targetTradePartner.GetComponent<AgentScript>();
+				if (Vector3.Distance(transform.position, targetTradePartner.transform.position) > 20f || temp.inTrade || temp.dead) targetTradePartner = null;
 				else movementDir = (targetTradePartner.transform.position - transform.position).normalized;
 			} else {
 				Wander();
@@ -201,6 +202,7 @@ public class AgentScript : MonoBehaviour {
         health -= 50;
         GameObject dup = (GameObject) Instantiate(gameObject, transform.position + new Vector3(1f,0,0), Quaternion.identity);
         dup.GetComponent<AgentScript>().SetID(id, GetComponent<Renderer>().material.color);
+		dup.GetComponent<AgentScript>().endTrade();
     }
 
     //Sets the id of this agent. Called on instantiation.
@@ -252,13 +254,13 @@ public class AgentScript : MonoBehaviour {
 			ratio += ratio * (health - 40f) / 100f;
 			if (otherAgent.recieveTradeOffer(id, otherAgent.id, ratio)) {
 				print("deal made: " + id + "->" + otherAgent.id + ": " + ratio);
-				processTrade(id, otherAgent.id, ratio, otherAgent);
+				StartCoroutine(processTrade(id, otherAgent.id, ratio, otherAgent));
 				SimManager.instance.updateTradeRatio(id, otherAgent.id, ratio, transform.position);
 			} else {
 				print("no deal made: " + ratio);
+				otherAgent.endTrade();
+				endTrade();
 			}
-			otherAgent.endTrade();
-			endTrade();
 			//We need to generate an initial offer
 		} else {
 			targetTradePartner = null;
@@ -290,17 +292,22 @@ public class AgentScript : MonoBehaviour {
 		return false;
 	}
 
-	//Processes the trade in increments
-	public void processTrade(int rid1, int rid2, float ratio, AgentScript otherAgent) {
+	IEnumerator processTrade (int rid1, int rid2, float ratio, AgentScript otherAgent) {
 		//First we need to calculate how much of each resource can be traded. 
 		while (resources[rid2] >= 1f && otherAgent.resources[rid1] >= ratio) {
 			resources[rid1] += ratio;
 			resources[rid2] -= 1f;
 			otherAgent.resources[rid1] -= ratio;
 			otherAgent.resources[rid2] += 1f;
+
+			processResourceChanges();
+			otherAgent.processResourceChanges();
+
+			yield return new WaitForSeconds(0.1f);
 		}
-		processResourceChanges();
-		otherAgent.processResourceChanges();
+
+		otherAgent.endTrade();
+		endTrade();
 	}
 
 	//Checks the resources arrayt to get a new total, and consumes all resources of my type

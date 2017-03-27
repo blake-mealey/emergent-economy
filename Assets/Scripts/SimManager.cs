@@ -114,7 +114,6 @@ public class SimManager : MonoBehaviour {
 			}
 		}
 		globalTable.print();
-		print(agents.Count);
 	}
 
 	public void RegisterAgent (GameObject agent) {
