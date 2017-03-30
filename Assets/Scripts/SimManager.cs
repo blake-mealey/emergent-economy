@@ -48,7 +48,7 @@ public class SimManager : MonoBehaviour {
     private void SpawnResources () {
 
         //Spawn the resources
-        for (int i = 0; i < numberOfGroups; i++) {
+        for (int i = 1; i < numberOfGroups; i++) {
             for (int j = 0; j < resourceDepositsPerGroup; j++) {
 
                 int iterations = 0;
@@ -79,7 +79,7 @@ public class SimManager : MonoBehaviour {
     private void SpawnAgents () {
 
         //Generate all of the people
-        for (int j = 0; j < numberOfGroups; j++) {
+        for (int j = 0; j < numberOfGroups - 1; j++) {
             for (int k = 0; k < numberOfAgentsPerGroup; k++) {
 
                 int iterations = 0;
