@@ -47,6 +47,9 @@ public class AgentScript : MonoBehaviour {
 	private float tradeSearchTime = 20f;
 	private float currentTradeSearchTime = 0f;
 
+	private WaitForSeconds lookws;
+	private WaitForSeconds healthws;
+
 	// Use this for initialization
 	void Start () {
 
@@ -58,6 +61,10 @@ public class AgentScript : MonoBehaviour {
 
 		currentTime = timePerSearchDir;
         SimManager.instance.RegisterAgent(this.gameObject);
+
+		lookws = new WaitForSeconds(Random.Range(0.4f, 0.6f));
+		healthws = new WaitForSeconds(Random.Range(0.9f, 1.1f));
+
 		StartCoroutine(HealthDec());
         StartCoroutine(LookAround());
 
@@ -68,7 +75,7 @@ public class AgentScript : MonoBehaviour {
     IEnumerator HealthDec () {
         while (health > 0) {
 			health -= 1f; // UnityEngine.Random.Range(0f, 1f);
-            yield return new WaitForSeconds(1f);
+            yield return healthws;
         }
     }
 
@@ -78,7 +85,7 @@ public class AgentScript : MonoBehaviour {
             InfoData data = SimManager.instance.GetInfo(transform.position, infoRadius);
 			closeAgents = data.agents;
 			closeResources = data.resources;
-            yield return new WaitForSeconds(0.5f);
+            yield return lookws;
 
 			if (dead) break;
         }
