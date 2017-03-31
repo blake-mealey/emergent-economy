@@ -7,7 +7,6 @@ public class Resource : MonoBehaviour {
     public int id = -1;
     public float resourcesLeft = 1000f;
     public float startingResourceAmount = 1000f;
-    public int minerLimit = 10;
 
     private int miners = 0;
 
@@ -29,23 +28,10 @@ public class Resource : MonoBehaviour {
 		}
     }
 
-    public void initialize (int nid, float nresources, int nminerLimit) {
+    public void initialize (int nid, float nresources) {
         id = nid;
         resourcesLeft = nresources;
         startingResourceAmount = nresources;
-        minerLimit = nminerLimit;
-    }
-
-    public bool requestMiningSlot () {
-        if (minerLimit > miners && resourcesLeft > 0f) {
-            miners++;
-            return true;
-        }
-        return false;
-    }
-
-    public void releaseMiningSlot () {
-        miners--;
     }
 
     public float mineResource (float amount) {

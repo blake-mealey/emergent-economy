@@ -34,7 +34,7 @@ public class ResourceMonitor : MonoBehaviour {
 
 		float currentY = 0.5f;
 		for (int j = 0; j < resources.Length; j++) {
-			if (resources[j] > 0) {
+			if (resources[j] > 0.25f) {
 				resourceStacks[j].SetActive(true);
 				resourceStacks[j].transform.localScale = new Vector3(0.5f, resources[j] / 40f, 0.5f);
 				resourceStacks[j].transform.localPosition = new Vector3(0, currentY + (resourceStacks[j].transform.localScale.y / 2f), 0);

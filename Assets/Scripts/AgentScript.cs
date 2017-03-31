@@ -32,6 +32,7 @@ public class AgentScript : MonoBehaviour {
 
 	private GameObject targetTradePartner;
 	public bool inTrade = false; //Used by other agents to determine if I am already trading
+	public bool initiator = false;
 	private float tradeCooldown = 0f;
 
 	enum Modes { Gather, Trade};
@@ -139,8 +140,8 @@ public class AgentScript : MonoBehaviour {
 		//Actively look for a trade
 		if (mode == Modes.Trade && !inTrade && tradeCooldown <= 0f) {
 
+			GameObject firstTarget = null;
 			GameObject secondTarget = null;
-			GameObject thirdTarget = null;
 
 			int mostNotMineId = 0;
 			float mostNotMineAmount = 0;
@@ -155,7 +156,7 @@ public class AgentScript : MonoBehaviour {
 			if (targetTradePartner == null) {
 				float highestTradeQuantity = 0;
 				float highestTradeQuantity2 = 0;
-				float highestTradeQuantity3 = 0;
+				bool foundPriorityDeal = false;
 
 				for (int k = 0; k < closeAgents.Length; k++) {
 					//For now, just look for other agents with the resource I wish to collect
@@ -164,42 +165,41 @@ public class AgentScript : MonoBehaviour {
 
 					AgentScript tempAgent = closeAgents[k].GetComponent<AgentScript>();
 					if (!tempAgent.inTrade && !tempAgent.dead) {
-						// Take the max of "my resource they have" and "their resource I have".
-						float max = Mathf.Min(tempAgent.resources[id], resources[tempAgent.id]);
-						//float max = tempAgent.resources[id];
-						//max = max > resources[tempAgent.id] ? resources[tempAgent.id] : max;
-						
-						//Set that person as my trading person
-						if (max > 2f && max > highestTradeQuantity) {
-							targetTradePartner = closeAgents[k];
-							//resourceToTrade = tempAgent.id;
-							//resourceToReceive = id;
-							highestTradeQuantity = max;
+
+						float min = Mathf.Min(tempAgent.resources[id], mostNotMineAmount);
+						//Is there someone trading for my resource (most prefered)
+						if (min > 5f && min > highestTradeQuantity) {
+							firstTarget = closeAgents[k];
+							highestTradeQuantity = min;
+							foundPriorityDeal = true;
 						}
 
-						float max2 = Mathf.Min(tempAgent.resources[id], mostNotMineAmount);
-						if (max2 > 2f && max2 > highestTradeQuantity2) {
-							secondTarget = closeAgents[k];
-							highestTradeQuantity2 = max2;
+						//No point checking for the best deal if a priority deal was found.
+						if (foundPriorityDeal) continue;
+
+						//Otherwise find the best deal
+						for (int i = 0; i < tempAgent.resources.Length; i++) { 
+							float min2 = Mathf.Min(tempAgent.resources[i], mostNotMineAmount);
+							float deal = min2 * myValueTable.getRatio(i, mostNotMineId);
+							if (min2 > 5f && deal > highestTradeQuantity2) {
+								secondTarget = closeAgents[k];
+								highestTradeQuantity2 = deal;
+								resourceToReceive = i;
+							}
 						}
 					}
 				}
-			}
 
-			if (targetTradePartner != null) {
-				AgentScript tempAgent = targetTradePartner.GetComponent<AgentScript>();
-				resourceToTrade = tempAgent.id;
-				resourceToReceive = id;
-			} else if (secondTarget != null) {
-				targetTradePartner = secondTarget;
-				AgentScript tempAgent = secondTarget.GetComponent<AgentScript>();
-				resourceToTrade = mostNotMineId;
-				resourceToReceive = id;
-			} else if (thirdTarget != null) {
-				targetTradePartner = thirdTarget;
-				AgentScript tempAgent = thirdTarget.GetComponent<AgentScript>();
-				resourceToTrade = mostNotMineId;
-				resourceToReceive = id;
+				if (firstTarget != null) {
+					targetTradePartner = firstTarget;
+					AgentScript tempAgent = firstTarget.GetComponent<AgentScript>();
+					resourceToTrade = mostNotMineId;
+					resourceToReceive = id;
+				} else if (secondTarget != null) {
+					targetTradePartner = secondTarget;
+					AgentScript tempAgent = secondTarget.GetComponent<AgentScript>();
+					resourceToTrade = mostNotMineId;
+				} 
 			}
 
 			//Move to that person
@@ -241,6 +241,9 @@ public class AgentScript : MonoBehaviour {
     //Called to destory the agent
     private void Die () {
 		dead = true;
+
+		if (inTrade && initiator) targetTradePartner.GetComponent<AgentScript>().endTrade();
+
         SimManager.instance.DeregisterAgent(this.gameObject);
 		GameObject explosion = (GameObject)Instantiate(explosionEffect, transform.position, Quaternion.identity);
 		explosion.GetComponent<ParticleSystem>().startColor = GetComponent<Renderer>().material.color;
@@ -299,17 +302,17 @@ public class AgentScript : MonoBehaviour {
 
 		if (inTrade) {
 			freeze();
-			
+			initiator = true;
 			//id and otherAgent.id need to be changed to the actual id of the resources being traded
 			float ratio = myValueTable.getRatio(resourceToReceive, resourceToTrade);
 			ratio += ratio * (health - 40f) / 100f;
-			print("Proposing ratio: " + ratio);
-			if (otherAgent.recieveTradeOffer(resourceToTrade, resourceToReceive, ratio)) {
-				print("deal made: " + resourceToReceive + "->" + resourceToTrade + ": " + ratio);
-				StartCoroutine(processTrade(resourceToTrade, resourceToReceive, ratio, otherAgent));
+			//print("Proposing ratio: " + ratio);
+			if (otherAgent.recieveTradeOffer(resourceToReceive, resourceToTrade, ratio)) {
+				//print("deal made: " + resourceToReceive + "->" + resourceToTrade + ": " + ratio);
+				StartCoroutine(processTrade(resourceToReceive, resourceToTrade, ratio, otherAgent));
 				SimManager.instance.updateTradeRatio(resourceToReceive, resourceToTrade, ratio, transform.position);
 			} else {
-				print("no deal made: " + ratio);
+				//print("no deal made: " + ratio);
 				otherAgent.endTrade();
 				endTrade();
 			}
@@ -340,7 +343,7 @@ public class AgentScript : MonoBehaviour {
 		float acceptableRatio = myValueTable.getRatio(rid1, rid2);
 		acceptableRatio += acceptableRatio * (60 - health) / 100f;
 
-		print("Acceptable ratio: " + acceptableRatio);
+		//print("Acceptable ratio: " + acceptableRatio);
 		//If they offer a better ratio than what I want, accept.
 		if (ratio < acceptableRatio) return true;
 
@@ -350,6 +353,9 @@ public class AgentScript : MonoBehaviour {
 	IEnumerator processTrade (int rid1, int rid2, float ratio, AgentScript otherAgent) {
 		//First we need to calculate how much of each resource can be traded. 
 		while (resources[rid2] >= 1f && otherAgent.resources[rid1] >= ratio) {
+
+			if (otherAgent.dead) break;
+
 			resources[rid1] += ratio;
 			resources[rid2] -= 1f;
 			otherAgent.resources[rid1] -= ratio;
@@ -377,6 +383,7 @@ public class AgentScript : MonoBehaviour {
 
 	//Called to end a trade, successful or not.
 	public void endTrade () {
+		initiator = false;
 		inTrade = false;
 		targetTradePartner = null;
 		tradeCooldown = 4f;

@@ -11,13 +11,13 @@ public class SimManager : MonoBehaviour {
 
     public int resourceDepositsPerGroup = 3;
     public float resourcePerDeposit = 1000f;
-    public int resourceMiningLimit = 10;
 
     public Vector3 spawnAreaStart;
     public Vector3 spawnAreaEnd;
 
     public GameObject resource;
     public GameObject agent;
+	public GameObject confirmedTrade;
 
     private List<GameObject> agents = new List<GameObject>();
     private List<GameObject> resources = new List<GameObject>();
@@ -48,7 +48,7 @@ public class SimManager : MonoBehaviour {
     private void SpawnResources () {
 
         //Spawn the resources
-        for (int i = 1; i < numberOfGroups; i++) {
+        for (int i = 0; i < numberOfGroups; i++) {
             for (int j = 0; j < resourceDepositsPerGroup; j++) {
 
                 int iterations = 0;
@@ -68,9 +68,9 @@ public class SimManager : MonoBehaviour {
                     iterations++;
                 }
 
-                GameObject resourceInstance = (GameObject)Instantiate(resource, randLoc, Quaternion.identity);
+                GameObject resourceInstance = Instantiate(resource, randLoc, Quaternion.identity);
                 resourceInstance.GetComponent<Renderer>().material.color = colors[i];
-                resourceInstance.GetComponent<Resource>().initialize(i, resourcePerDeposit, resourceMiningLimit);
+                resourceInstance.GetComponent<Resource>().initialize(i, resourcePerDeposit);
                 resources.Add(resourceInstance);
             }
         }
@@ -79,7 +79,7 @@ public class SimManager : MonoBehaviour {
     private void SpawnAgents () {
 
         //Generate all of the people
-        for (int j = 0; j < numberOfGroups - 1; j++) {
+        for (int j = 0; j < numberOfGroups; j++) {
             for (int k = 0; k < numberOfAgentsPerGroup; k++) {
 
                 int iterations = 0;
@@ -108,20 +108,25 @@ public class SimManager : MonoBehaviour {
 
 	public void updateTradeRatio (int rid1, int rid2, float ratio, Vector3 position) {
 		globalTable.UpdateValue(rid1, 1f, rid2, ratio);
+
+		Instantiate(confirmedTrade, position, Quaternion.identity);
+
 		for (int i = 0; i < agents.Count; i++) {
 			if (Vector3.Distance(agents[i].transform.position, position) < 15f) {
 				agents[i].GetComponent<AgentScript>().myValueTable.UpdateValue(rid1, 1f, rid2, ratio);
 			}
 		}
-		globalTable.print();
+		//globalTable.print();
 	}
 
 	public void RegisterAgent (GameObject agent) {
         agents.Add(agent);
+		print(agents.Count);
     }
 
     public void DeregisterAgent (GameObject agent) {
         agents.Remove(agent);
+		print(agents.Count);
     }
 
 	public void DeregisterResource (GameObject resource) {
