@@ -22,11 +22,18 @@ public class SimManager : MonoBehaviour {
     private List<GameObject> agents = new List<GameObject>();
     private List<GameObject> resources = new List<GameObject>();
     public Color[] colors;
+    public int[] populations;
 
 	private ResourceValueTable globalTable;
 
-	// Use this for initialization
-	void Start () {
+    private int tradeCount = 0;
+
+    void Awake() {
+        instance = this;
+    }
+
+    // Use this for initialization
+    void Start () {
 
         instance = this;
 		globalTable = new ResourceValueTable();
@@ -37,7 +44,8 @@ public class SimManager : MonoBehaviour {
         Random.InitState(System.DateTime.Now.Millisecond);
 
         colors = new Color[numberOfGroups];
-        for (int j = 0; j < colors.Length; j++) {
+        populations = new int[numberOfGroups];
+        for (int j = 0; j < numberOfGroups; j++) {
             colors[j] = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
         }
 
@@ -107,7 +115,9 @@ public class SimManager : MonoBehaviour {
     }
 
 	public void updateTradeRatio (int rid1, int rid2, float ratio, Vector3 position) {
-		globalTable.UpdateValue(rid1, 1f, rid2, ratio);
+        tradeCount++;
+
+        globalTable.UpdateValue(rid1, 1f, rid2, ratio);
 
 		Instantiate(confirmedTrade, position, Quaternion.identity);
 
@@ -119,14 +129,26 @@ public class SimManager : MonoBehaviour {
 		//globalTable.print();
 	}
 
-	public void RegisterAgent (GameObject agent) {
-        agents.Add(agent);
-		print(agents.Count);
+    public int GetTradeFrequency() {
+        int trades = tradeCount;
+        tradeCount = 0;
+        return trades;
     }
 
-    public void DeregisterAgent (GameObject agent) {
+    public int GetPopulation() {
+        return agents.Count;
+    }
+
+	public void RegisterAgent (GameObject agent, int id) {
+        populations[id]++;
+        agents.Add(agent);
+		//print(agents.Count);
+    }
+
+    public void DeregisterAgent (GameObject agent, int id) {
+        populations[id]--;
         agents.Remove(agent);
-		print(agents.Count);
+		//print(agents.Count);
     }
 
 	public void DeregisterResource (GameObject resource) {

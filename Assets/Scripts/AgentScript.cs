@@ -60,7 +60,7 @@ public class AgentScript : MonoBehaviour {
 		myValueTable = new ResourceValueTable();
 
 		currentTime = timePerSearchDir;
-        SimManager.instance.RegisterAgent(this.gameObject);
+        SimManager.instance.RegisterAgent(gameObject, id);
 
 		lookws = new WaitForSeconds(Random.Range(0.4f, 0.6f));
 		healthws = new WaitForSeconds(Random.Range(0.9f, 1.1f));
@@ -94,6 +94,8 @@ public class AgentScript : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 		if (dead) return;
+
+        HeatMap.instance.AddHeat(transform.position, SimManager.instance.colors[id]);
 
 
         if (health <= 0) Die();
@@ -233,7 +235,8 @@ public class AgentScript : MonoBehaviour {
 		currentTime += Time.deltaTime;
 		if (currentTime > timePerSearchDir) {
 			currentTime = 0;
-			movementDir = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f)).normalized;
+            movementDir = (movementDir + new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f))).normalized;
+			//movementDir = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f)).normalized;
 		}
 	}
 
@@ -251,7 +254,7 @@ public class AgentScript : MonoBehaviour {
 
 		if (inTrade && initiator) targetTradePartner.GetComponent<AgentScript>().endTrade();
 
-        SimManager.instance.DeregisterAgent(this.gameObject);
+        SimManager.instance.DeregisterAgent(gameObject, id);
 		GameObject explosion = (GameObject)Instantiate(explosionEffect, transform.position, Quaternion.identity);
 		explosion.GetComponent<ParticleSystem>().startColor = GetComponent<Renderer>().material.color;
 		gameObject.SetActive(false);
@@ -288,7 +291,9 @@ public class AgentScript : MonoBehaviour {
 		//Did I collide with the person I want trade with?
 		if (!inTrade && collision.gameObject == targetTradePartner && !targetTradePartner.GetComponent<AgentScript>().inTrade) {
 			initiateTrade(collision.gameObject);
-		}
+		} else if(collision.gameObject.CompareTag("wall") && targetResource == null && targetTradePartner == null) {
+            movementDir *= -1;
+        }
 	}
 
 	//Freeze the object inplace.
