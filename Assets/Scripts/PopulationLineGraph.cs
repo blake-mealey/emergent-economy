@@ -1,13 +1,16 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.UI.Extensions;
 
 public class PopulationLineGraph : MonoBehaviour {
 
     public GameObject linePrefab;
+    public GameObject labelPrefab;
 
-    List<UILineRenderer> lines;
+    UILineRenderer[] lines;
+    Text[] labels;
     int index;
     float highestValue = 1;
     float prevHighestValue;
@@ -18,21 +21,37 @@ public class PopulationLineGraph : MonoBehaviour {
 
     // Use this for initialization
     void Start () {
-        lines = new List<UILineRenderer>();
         index = 0;
     }
 
     IEnumerator UpdateGraph() {
         yield return new WaitForSeconds(1f);
 
-        foreach(Color color in SimManager.instance.colors) {
+        lines = new UILineRenderer[SimManager.instance.numberOfGroups];
+        labels = new Text[SimManager.instance.numberOfGroups];
+
+        Transform legend = transform.GetChild(0);
+
+        for(int i = 0; i < lines.Length; i++) {
+            Color color = SimManager.instance.colors[i];
+
             GameObject line = Instantiate(linePrefab, transform);
             RectTransform rt = line.GetComponent<RectTransform>();
             rt.offsetMin = new Vector2(10, 10);
             rt.offsetMax = new Vector2(-10, -10);
             UILineRenderer lineRenderer = line.GetComponent<UILineRenderer>();
             lineRenderer.color = color;
-            lines.Add(lineRenderer);
+            lines[i] = lineRenderer;
+            line.GetComponent<Outline>().effectColor = color * 0.7f;
+
+            GameObject label = Instantiate(labelPrefab, legend);
+            rt = label.GetComponent<RectTransform>();
+            rt.offsetMin = new Vector2(0, 0);
+            rt.offsetMax = new Vector2(0, 20);
+            rt.localPosition = new Vector2(0, 45 - (i * 20));
+            labels[i] = label.GetComponent<Text>();
+            labels[i].color = color;
+            labels[i].GetComponent<Outline>().effectColor = color * 0.7f;
         }
 
         while (true) {
@@ -47,10 +66,13 @@ public class PopulationLineGraph : MonoBehaviour {
                 SquishPointsHorizontally();
             }
 
-            for (int i = 0; i < lines.Count; i++) {
+            for (int i = 0; i < lines.Length; i++) {
                 UILineRenderer lineRenderer = lines[i];
 
                 float value = (float)SimManager.instance.populations[i];
+                if(!labels[i].text.Equals(value.ToString())) {
+                    labels[i].text = value.ToString();
+                }
                 if (value > highestValue) {
                     prevHighestValue = highestValue;
                     highestValue = value;
