@@ -41,12 +41,30 @@ public class SimManager : MonoBehaviour {
         if (numberOfGroups <= 0) numberOfGroups = 1;
         if (numberOfAgentsPerGroup <= 0) numberOfAgentsPerGroup = 1;
 
-        Random.InitState(System.DateTime.Now.Millisecond);
+
+		System.DateTime epochStart = new System.DateTime(1970, 1, 1, 0, 0, 0, System.DateTimeKind.Utc);
+		int seed = (int)(System.DateTime.UtcNow - epochStart).TotalSeconds;
+		Random.InitState(seed);
+		print("Seed: " + seed);
+
 
         colors = new Color[numberOfGroups];
         populations = new int[numberOfGroups];
-        for (int j = 0; j < numberOfGroups; j++) {
-            colors[j] = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
+        for (int j = 0; j < colors.Length; j++) {
+			bool validColor = false;
+			int iter = 0;
+			while (!validColor && iter < 100) {
+				iter++;
+				colors[j] = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
+				validColor = true;
+				for (int k = 0; k < colors.Length; k++) {
+					if (j == k || colors[k] == null) continue;
+					else if (Vector3.Distance(new Vector3(colors[j].r, colors[j].g, colors[j].b), new Vector3(colors[k].r, colors[k].g, colors[k].b)) < 0.5f) {
+						validColor = false;
+						break;
+					}
+				}
+			}
         }
 
         SpawnResources();
