@@ -44,6 +44,11 @@ public class SimManager : MonoBehaviour {
 
 		System.DateTime epochStart = new System.DateTime(1970, 1, 1, 0, 0, 0, System.DateTimeKind.Utc);
 		int seed = (int)(System.DateTime.UtcNow - epochStart).TotalSeconds;
+
+		// Here is a good seed: 1491256218 Run with 3 groups, 200 agents each, 3 deposits per group spawn range 10-70
+		// Random.InitState(1491256218);
+
+
 		Random.InitState(seed);
 		print("Seed: " + seed);
 

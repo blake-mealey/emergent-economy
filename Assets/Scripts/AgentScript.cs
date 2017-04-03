@@ -34,6 +34,7 @@ public class AgentScript : MonoBehaviour {
 	public bool inTrade = false; //Used by other agents to determine if I am already trading
 	public bool initiator = false;
 	private float tradeCooldown = 0f;
+	private float cooldown = 2.5f;
 
 	enum Modes { Gather, Trade};
 	private Modes mode = Modes.Gather;
@@ -43,12 +44,8 @@ public class AgentScript : MonoBehaviour {
 	private int resourceToTrade = -1;
 	private int resourceToReceive = -1;
 
-	//used to determine if the agent should trade for a resource of another type
-	private float tradeSearchTime = 20f;
-	private float currentTradeSearchTime = 0f;
-
 	private WaitForSeconds lookws;
-	private WaitForSeconds healthws;
+	private float healthLoss;
 
 	// Use this for initialization
 	void Start () {
@@ -63,21 +60,13 @@ public class AgentScript : MonoBehaviour {
         SimManager.instance.RegisterAgent(gameObject, id);
 
 		lookws = new WaitForSeconds(Random.Range(0.4f, 0.6f));
-		healthws = new WaitForSeconds(Random.Range(0.9f, 1.1f));
+		healthLoss = Random.Range(0.9f, 1.1f);
 
-		StartCoroutine(HealthDec());
         StartCoroutine(LookAround());
 
 		GameObject rm = Instantiate(resourceMonitor);
 		rm.GetComponent<ResourceMonitor>().myAgent = this;
 	}
-	
-    IEnumerator HealthDec () {
-        while (health > 0) {
-			health -= 1f; // UnityEngine.Random.Range(0f, 1f);
-            yield return healthws;
-        }
-    }
 
     //Look at the surrounding information every X amount of time
     IEnumerator LookAround () {
@@ -95,10 +84,10 @@ public class AgentScript : MonoBehaviour {
 	void Update () {
 		if (dead) return;
 
-        HeatMap.instance.AddHeat(transform.position, SimManager.instance.colors[id]);
+        HeatMap.instance.AddHeat(transform.position, SimManager.instance.colors[id] * Time.deltaTime);
 
-
-        if (health <= 0) Die();
+		health -= healthLoss * Time.deltaTime;
+		if (health <= 0) Die();
         if (health >= 90) Reproduce();
 
 		//Need to ask a few things in order:
@@ -398,7 +387,7 @@ public class AgentScript : MonoBehaviour {
 		initiator = false;
 		inTrade = false;
 		targetTradePartner = null;
-		tradeCooldown = 4f;
+		tradeCooldown = cooldown;
 		thaw();
 	}
 }

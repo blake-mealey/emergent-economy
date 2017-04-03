@@ -50,6 +50,6 @@ public class HeatMap : MonoBehaviour {
         int x = resolution - (int)pos.x;
         int y = resolution - (int)pos.z;
         heat[x, y] += 1f;
-        colors[x, y] += color / 1000f;
+        colors[x, y] += color / 25f;
     }
 }
