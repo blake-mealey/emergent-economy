@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -62,12 +63,10 @@ public class PopulationLineGraph : MonoBehaviour {
                 if (i != j) {
                     GameObject label = Instantiate(ratioLabelPrefab, column.transform);
                     ratioLabels[i, j] = label.GetComponent<Text>();
-                    string c0 = ColorUtility.ToHtmlStringRGB(SimManager.instance.colors[i]);
-                    string c1 = ColorUtility.ToHtmlStringRGB(SimManager.instance.colors[j]);
-                    ratioLabels[i, j].text = string.Format("<color=#{0}>{1}</color> : <color=#{2}>{3}</color>", c0, 1, c1, 1);
                 }
             }
         }
+        UpdateTradeRatios();
 
         for (int i = 0; i < lines.Length; i++) {
             graphHistories[i] = new List<Vector2>();
@@ -124,6 +123,8 @@ public class PopulationLineGraph : MonoBehaviour {
             //if(!maximized)
                 UpdateLines();
 
+            UpdateTradeRatios();
+
             if (SimManager.instance.GetPopulation() == 0) break;
             yield return new WaitForSeconds(0.25f);
         }
@@ -166,6 +167,27 @@ public class PopulationLineGraph : MonoBehaviour {
         graphHistories[lineIndex].Add(new Vector2(0f, y));
     }
 
+    public void UpdateTradeRatios() {
+        SimManager.instance.MakeGlobalTradeRatioSnapshot();
+        float[,] snapshot;
+        if (maximized)
+            snapshot = SimManager.instance.GetGlobalTradeRatioSnapshot(markerIndex);
+        else
+            snapshot = SimManager.instance.GetGlobalTradeRatioSnapshot();
+
+        for (int i = 0; i < ratioLabels.GetLength(0); i++) {
+            for (int j = 0; j < ratioLabels.GetLength(1); j++) {
+                if (i != j) {
+                    string c0 = ColorUtility.ToHtmlStringRGB(SimManager.instance.colors[i]);
+                    string c1 = ColorUtility.ToHtmlStringRGB(SimManager.instance.colors[j]);
+                    ratioLabels[i, j].text = string.Format(
+                        "<color=#{0}>{1}</color> : <color=#{2}>{3}</color>",
+                        c0, 1, c1, snapshot[i, j].ToString("F3"));
+                }
+            }
+        }
+    }
+
     public void UpdateLabel(int lineIndex, float value) {
         if (!labels[lineIndex].text.Equals(value.ToString())) {
             labels[lineIndex].text = value.ToString();
@@ -206,7 +228,8 @@ public class PopulationLineGraph : MonoBehaviour {
 
         marker.sizeDelta = new Vector2(1, marker.sizeDelta.y);
 
-        ratiosPanel.SetActive(true);
+        ratiosPanel.GetComponent<RectTransform>().offsetMin = new Vector2(260, -210);
+        ratiosPanel.GetComponent<RectTransform>().sizeDelta = new Vector2(300, 200);
 
         UpdateWorldRect();
         UpdateLines();
@@ -226,7 +249,8 @@ public class PopulationLineGraph : MonoBehaviour {
             UpdateLabel(i, points[points.Count - 1].y);
         }
 
-        ratiosPanel.SetActive(false);
+        ratiosPanel.GetComponent<RectTransform>().offsetMin = new Vector2(310, -100);
+        ratiosPanel.GetComponent<RectTransform>().sizeDelta = new Vector2(300, 200);
 
         UpdateWorldRect();
         UpdateLines();
@@ -241,6 +265,8 @@ public class PopulationLineGraph : MonoBehaviour {
             } else {
                 minimize();
             }
+        } else if(Input.GetKeyUp(KeyCode.R)) {
+            ratiosPanel.SetActive(!ratiosPanel.activeSelf);
         }
 
         // Update marker

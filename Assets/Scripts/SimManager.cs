@@ -25,6 +25,7 @@ public class SimManager : MonoBehaviour {
     public int[] populations;
 
 	private ResourceValueTable globalTable;
+    private List<float[,]> globalTableSnapshots;
 
     private int tradeCount = 0;
 
@@ -36,7 +37,8 @@ public class SimManager : MonoBehaviour {
     void Start () {
 
         instance = this;
-		globalTable = new ResourceValueTable();
+        globalTableSnapshots = new List<float[,]>();
+        globalTable = new ResourceValueTable();
 
         if (numberOfGroups <= 0) numberOfGroups = 1;
         if (numberOfAgentsPerGroup <= 0) numberOfAgentsPerGroup = 1;
@@ -177,6 +179,28 @@ public class SimManager : MonoBehaviour {
 	public void DeregisterResource (GameObject resource) {
 		resources.Remove(resource);
 	}
+
+    public float[,] GetGlobalTradeRatioSnapshot(int index) {
+        return globalTableSnapshots[index];
+    }
+
+    public float[,] GetGlobalTradeRatioSnapshot() {
+        return GetGlobalTradeRatioSnapshot(globalTableSnapshots.Count - 1);
+    }
+
+    public float GetGlobalTradeRatio(int snapshot, int rid1, int rid2) {
+        return globalTableSnapshots[snapshot][rid1, rid2];
+    }
+
+    public float GetGlobalTradeRatio(int rid1, int rid2) {
+        return GetGlobalTradeRatio(globalTableSnapshots.Count - 1, rid1, rid2);
+    }
+
+    public float[,] MakeGlobalTradeRatioSnapshot() {
+        float[,] snapshot = globalTable.resourceValues.Clone() as float[,];
+        globalTableSnapshots.Add(snapshot);
+        return snapshot;
+    }
 
     public InfoData GetInfo (Vector3 position, float radius) {
 		radius *= radius;
