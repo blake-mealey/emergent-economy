@@ -188,12 +188,8 @@ public class SimManager : MonoBehaviour {
         return GetGlobalTradeRatioSnapshot(globalTableSnapshots.Count - 1);
     }
 
-    public float GetGlobalTradeRatio(int snapshot, int rid1, int rid2) {
-        return globalTableSnapshots[snapshot][rid1, rid2];
-    }
-
-    public float GetGlobalTradeRatio(int rid1, int rid2) {
-        return GetGlobalTradeRatio(globalTableSnapshots.Count - 1, rid1, rid2);
+    public int GetGlobalTradeRatioSnapshotsCount() {
+        return globalTableSnapshots.Count;
     }
 
     public float[,] MakeGlobalTradeRatioSnapshot() {

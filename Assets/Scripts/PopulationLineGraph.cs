@@ -66,6 +66,7 @@ public class PopulationLineGraph : MonoBehaviour {
                 }
             }
         }
+        SimManager.instance.MakeGlobalTradeRatioSnapshot();
         UpdateTradeRatios();
 
         for (int i = 0; i < lines.Length; i++) {
@@ -123,7 +124,8 @@ public class PopulationLineGraph : MonoBehaviour {
             //if(!maximized)
                 UpdateLines();
 
-            UpdateTradeRatios();
+            SimManager.instance.MakeGlobalTradeRatioSnapshot();
+            if (!maximized) UpdateTradeRatios();
 
             if (SimManager.instance.GetPopulation() == 0) break;
             yield return new WaitForSeconds(0.25f);
@@ -168,10 +170,10 @@ public class PopulationLineGraph : MonoBehaviour {
     }
 
     public void UpdateTradeRatios() {
-        SimManager.instance.MakeGlobalTradeRatioSnapshot();
         float[,] snapshot;
         if (maximized)
-            snapshot = SimManager.instance.GetGlobalTradeRatioSnapshot(markerIndex);
+            snapshot = SimManager.instance.GetGlobalTradeRatioSnapshot(
+                (int)(markerRatio * (float)SimManager.instance.GetGlobalTradeRatioSnapshotsCount()));
         else
             snapshot = SimManager.instance.GetGlobalTradeRatioSnapshot();
 
@@ -293,6 +295,7 @@ public class PopulationLineGraph : MonoBehaviour {
                     }
                 }
             }
+            UpdateTradeRatios();
         }
     }
 }
