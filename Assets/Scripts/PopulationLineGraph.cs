@@ -11,9 +11,12 @@ public class PopulationLineGraph : MonoBehaviour {
     public GameObject labelPrefab;
     public GameObject ratioColumnPrefab;
     public GameObject ratioLabelPrefab;
+    public GameObject eventMarkerPrefab;
 
     RectTransform marker;
     GameObject ratiosPanel;
+
+    List<GraphEventData> eventMarkers;
 
     List<Vector2>[] graphHistories;
     List<Vector2>[] currentGraphs;
@@ -33,6 +36,10 @@ public class PopulationLineGraph : MonoBehaviour {
     bool maximized = false;
     bool initialized = false;
 
+    bool finished = false;
+    float tStart;
+    float tEnd;
+
     Rect worldRect;
 
     // Use this for initialization
@@ -42,6 +49,7 @@ public class PopulationLineGraph : MonoBehaviour {
 
         marker = transform.Find("Marker").GetComponent<RectTransform>();
         ratiosPanel = transform.Find("TradeRatios").gameObject;
+        eventMarkers = new List<GraphEventData>();
     }
 
     IEnumerator UpdateGraph() {
@@ -93,6 +101,9 @@ public class PopulationLineGraph : MonoBehaviour {
         UpdateWorldRect();
         initialized = true;
 
+        tStart = Time.time;
+        int lastDeadResourceCount = SimManager.instance.GetDeadResourceCount();
+
         while (true) {
             for (int i = 0; i < lines.Length; i++) {
                 UILineRenderer lineRenderer = lines[i];
@@ -121,15 +132,34 @@ public class PopulationLineGraph : MonoBehaviour {
                 SquishPointsHorizontally();
             }
             
-            //if(!maximized)
-                UpdateLines();
+            UpdateLines();
 
             SimManager.instance.MakeGlobalTradeRatioSnapshot();
             if (!maximized) UpdateTradeRatios();
 
+            int deadResourceCount = SimManager.instance.GetDeadResourceCount();
+            if (deadResourceCount > lastDeadResourceCount) {
+                print(String.Format("{0} -> {1}", lastDeadResourceCount, deadResourceCount));
+                for (int i = lastDeadResourceCount; i < deadResourceCount; i++) {
+                    GraphEventData eventData = SimManager.instance.GetDeadResource(i);
+                    GameObject eventMarker = Instantiate(eventMarkerPrefab, transform);
+                    eventMarker.GetComponent<Image>().color = eventData.color;
+                    eventData.transform = eventMarker.GetComponent<RectTransform>();
+                    eventData.transform.offsetMin = new Vector2(eventData.transform.offsetMin.x, 5);
+                    eventData.transform.offsetMax = new Vector2(eventData.transform.offsetMax.x, -5);
+                    eventMarkers.Add(eventData);
+                }
+                lastDeadResourceCount = deadResourceCount;
+            }
+
+            if (maximized) UpdateEventMarkers();
+
             if (SimManager.instance.GetPopulation() == 0) break;
             yield return new WaitForSeconds(0.25f);
         }
+
+        tEnd = Time.time;
+        finished = true;
     }
 
     public void SquishPointsVertically() {
@@ -221,6 +251,14 @@ public class PopulationLineGraph : MonoBehaviour {
         worldRect = new Rect(corners[0] + new Vector3(10, 10), corners[2] - corners[0] - new Vector3(20, 20));
     }
 
+    public void UpdateEventMarkers() {
+        foreach (GraphEventData eventData in eventMarkers) {
+            float r = (eventData.timeStamp - tStart) / ((finished ? tEnd : Time.time) - tStart);
+            float x = r * worldRect.width;
+            eventData.transform.position = new Vector2(x + 20, eventData.transform.position.y);
+        }
+    }
+
     public void maximize() {
         // TODO: Pause simulation
 
@@ -229,6 +267,10 @@ public class PopulationLineGraph : MonoBehaviour {
         rt.offsetMax = new Vector2(-65, rt.offsetMax.y);
 
         marker.sizeDelta = new Vector2(1, marker.sizeDelta.y);
+
+        foreach (GraphEventData eventData in eventMarkers) {
+            eventData.transform.sizeDelta = new Vector2(2, eventData.transform.sizeDelta.y);
+        }
 
         ratiosPanel.GetComponent<RectTransform>().offsetMin = new Vector2(260, -210);
         ratiosPanel.GetComponent<RectTransform>().sizeDelta = new Vector2(300, 200);
@@ -245,6 +287,10 @@ public class PopulationLineGraph : MonoBehaviour {
         rt.sizeDelta = new Vector2(250, 100);
 
         marker.sizeDelta = new Vector2(0, marker.sizeDelta.y);
+
+        foreach (GraphEventData eventData in eventMarkers) {
+            eventData.transform.sizeDelta = new Vector2(0, eventData.transform.sizeDelta.y);
+        }
 
         for (int i = 0; i < lines.Length; i++) {
             var points = currentGraphs[i];
@@ -296,6 +342,10 @@ public class PopulationLineGraph : MonoBehaviour {
                 }
             }
             UpdateTradeRatios();
+        }
+
+        if (finished && maximized) {
+            UpdateEventMarkers();
         }
     }
 }

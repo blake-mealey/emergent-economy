@@ -23,7 +23,8 @@ public class Resource : MonoBehaviour {
 		if (resourcesLeft <= 0) {
 			SimManager.instance.DeregisterResource(gameObject);
 			transform.position = startPos - new Vector3(0, 5f, 0);
-		} else {
+            enabled = false;
+        } else {
 			transform.position = Vector3.Lerp(startPos, startPos - new Vector3(0, 4f, 0), 1f - (resourcesLeft / startingResourceAmount));
 		}
     }

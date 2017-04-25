@@ -21,6 +21,9 @@ public class SimManager : MonoBehaviour {
 
     private List<GameObject> agents = new List<GameObject>();
     private List<GameObject> resources = new List<GameObject>();
+    
+    private List<GraphEventData> deadResources = new List<GraphEventData>();
+
     public Color[] colors;
     public int[] populations;
 
@@ -177,7 +180,8 @@ public class SimManager : MonoBehaviour {
     }
 
 	public void DeregisterResource (GameObject resource) {
-		resources.Remove(resource);
+        deadResources.Add(new GraphEventData(resource.GetComponent<Renderer>().material.color, Time.time));
+        resources.Remove(resource);
 	}
 
     public float[,] GetGlobalTradeRatioSnapshot(int index) {
@@ -196,6 +200,14 @@ public class SimManager : MonoBehaviour {
         float[,] snapshot = globalTable.resourceValues.Clone() as float[,];
         globalTableSnapshots.Add(snapshot);
         return snapshot;
+    }
+
+    public int GetDeadResourceCount() {
+        return deadResources.Count;
+    }
+
+    public GraphEventData GetDeadResource(int index) {
+        return deadResources[index];
     }
 
     public InfoData GetInfo (Vector3 position, float radius) {
@@ -225,4 +237,16 @@ public class InfoData {
         resources = r;
         agents = a;
     }
+}
+
+public struct GraphEventData {
+    public GraphEventData(Color c, float t) {
+        color = c;
+        timeStamp = t;
+        transform = null;
+    }
+
+    public Color color;
+    public float timeStamp;
+    public RectTransform transform;
 }
