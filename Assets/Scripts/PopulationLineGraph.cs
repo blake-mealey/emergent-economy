@@ -139,7 +139,6 @@ public class PopulationLineGraph : MonoBehaviour {
 
             int deadResourceCount = SimManager.instance.GetDeadResourceCount();
             if (deadResourceCount > lastDeadResourceCount) {
-                print(String.Format("{0} -> {1}", lastDeadResourceCount, deadResourceCount));
                 for (int i = lastDeadResourceCount; i < deadResourceCount; i++) {
                     GraphEventData eventData = SimManager.instance.GetDeadResource(i);
                     GameObject eventMarker = Instantiate(eventMarkerPrefab, transform);
