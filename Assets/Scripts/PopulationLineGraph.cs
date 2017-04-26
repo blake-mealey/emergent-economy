@@ -1,9 +1,11 @@
 ﻿using System;
+using System.IO;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.UI.Extensions;
+using System.Text;
 
 public class PopulationLineGraph : MonoBehaviour {
 
@@ -50,6 +52,62 @@ public class PopulationLineGraph : MonoBehaviour {
         marker = transform.Find("Marker").GetComponent<RectTransform>();
         ratiosPanel = transform.Find("TradeRatios").gameObject;
         eventMarkers = new List<GraphEventData>();
+    }
+
+    private void SaveData() {
+        string baseFileName = "out";
+        string fileName = baseFileName;
+        string fileExt = "csv";
+        int index = 2;
+        while (File.Exists(fileName + "." + fileExt)) {
+            fileName = baseFileName + index++;
+        }
+        var sr = File.CreateText(fileName + "." + fileExt);
+
+        int groupCount = SimManager.instance.numberOfGroups;
+        StringBuilder times = new StringBuilder("Time,");
+        StringBuilder[] pops = new StringBuilder[groupCount];
+        StringBuilder[,] ratios = new StringBuilder[groupCount,groupCount];
+        for (int i = 0; i < groupCount; i++) {
+            pops[i] = new StringBuilder("Group " + i + " Population:,");
+            for (int j = 0; j < groupCount; j++) {
+                if (i == j) continue;
+                ratios[i, j] = new StringBuilder(i + " to " + j + ",");
+            }
+        }
+
+        for (int i = 0; i < graphHistories[0].Count; i++) {
+            float idx = (float)i;
+            times.Append(idx * 0.25f);
+            times.Append(",");
+
+            var snapshot = SimManager.instance.GetGlobalTradeRatioSnapshot(i);
+            for (int x = 0; x < groupCount; x++) {
+                pops[x].Append(graphHistories[x][i].y);
+                pops[x].Append(",");
+                
+                for (int y = 0; y < groupCount; y++) {
+                    if (x == y) continue;
+                    ratios[x, y].Append(snapshot[x,y]);
+                    ratios[x, y].Append(",");
+                }
+            }
+        }
+        
+        sr.WriteLine(times);
+
+        for (int i = 0; i < groupCount; i++) {
+            sr.WriteLine(pops[i]);
+        }
+
+        for (int i = 0; i < groupCount; i++) {
+            for (int j = 0; j < groupCount; j++) {
+                if (i == j) continue;
+                sr.WriteLine(ratios[i, j]);
+            }
+        }
+
+        sr.Close();
     }
 
     IEnumerator UpdateGraph() {
@@ -146,6 +204,7 @@ public class PopulationLineGraph : MonoBehaviour {
                     eventData.transform = eventMarker.GetComponent<RectTransform>();
                     eventData.transform.offsetMin = new Vector2(eventData.transform.offsetMin.x, 5);
                     eventData.transform.offsetMax = new Vector2(eventData.transform.offsetMax.x, -5);
+                    eventData.transform.sizeDelta = new Vector2(maximized ? 2 : 0, eventData.transform.sizeDelta.y);
                     eventMarkers.Add(eventData);
                 }
                 lastDeadResourceCount = deadResourceCount;
@@ -159,6 +218,8 @@ public class PopulationLineGraph : MonoBehaviour {
 
         tEnd = Time.time;
         finished = true;
+
+        SaveData();
     }
 
     public void SquishPointsVertically() {
