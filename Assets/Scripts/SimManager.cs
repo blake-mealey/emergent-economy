@@ -184,7 +184,7 @@ public class SimManager : MonoBehaviour {
     }
 
 	public void DeregisterResource (GameObject resource) {
-        deadResources.Add(new GraphEventData(resource.GetComponent<Renderer>().material.color, Time.time));
+        deadResources.Add(new GraphEventData(resource.GetComponent<Resource>().id, Time.time));
         resources.Remove(resource);
 	}
 
@@ -244,12 +244,14 @@ public class InfoData {
 }
 
 public struct GraphEventData {
-    public GraphEventData(Color c, float t) {
-        color = c;
-        timeStamp = t;
+    public GraphEventData(int id, float time) {
+        groupId = id;
+        color = SimManager.instance.colors[groupId];
+        timeStamp = time;
         transform = null;
     }
 
+    public int groupId;
     public Color color;
     public float timeStamp;
     public RectTransform transform;

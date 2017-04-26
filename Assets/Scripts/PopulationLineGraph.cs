@@ -64,12 +64,18 @@ public class PopulationLineGraph : MonoBehaviour {
         }
         var sr = File.CreateText(fileName + "." + fileExt);
 
+
         int groupCount = SimManager.instance.numberOfGroups;
+
         StringBuilder times = new StringBuilder("Time,");
         StringBuilder[] pops = new StringBuilder[groupCount];
         StringBuilder[,] ratios = new StringBuilder[groupCount,groupCount];
+        StringBuilder eventTimes = new StringBuilder("Time,");
+        StringBuilder[] events = new StringBuilder[groupCount];
+
         for (int i = 0; i < groupCount; i++) {
             pops[i] = new StringBuilder("Group " + i + " Population:,");
+            events[i] = new StringBuilder("Group " + i + " Resource Node Deaths:,");
             for (int j = 0; j < groupCount; j++) {
                 if (i == j) continue;
                 ratios[i, j] = new StringBuilder(i + " to " + j + ",");
@@ -93,7 +99,18 @@ public class PopulationLineGraph : MonoBehaviour {
                 }
             }
         }
-        
+
+        for (int i = 0; i < eventMarkers.Count; i++) {
+            eventTimes.Append(eventMarkers[i].timeStamp);
+            eventTimes.Append(",");
+            for (int j = 0; j < groupCount; j++) {
+                if (eventMarkers[i].groupId == j) {
+                    events[j].Append(1);
+                }
+                events[j].Append(",");
+            }
+        }
+
         sr.WriteLine(times);
 
         for (int i = 0; i < groupCount; i++) {
@@ -105,6 +122,13 @@ public class PopulationLineGraph : MonoBehaviour {
                 if (i == j) continue;
                 sr.WriteLine(ratios[i, j]);
             }
+        }
+
+        sr.WriteLine();
+        sr.WriteLine(eventTimes);
+
+        for (int i = 0; i < groupCount; i++) {
+            sr.WriteLine(events[i]);
         }
 
         sr.Close();
