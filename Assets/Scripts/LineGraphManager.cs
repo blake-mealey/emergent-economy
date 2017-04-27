@@ -9,21 +9,13 @@ public class LineGraphManager : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-        /*LineGraph population = graphs[0];
-        population.fixedWidth = true;
-        population.maxWindowSize = population.windowSize = 300;
-        population.myDelegate = SimManager.instance.GetPopulation;
-        population.StartCoroutine("UpdateGraph");*/
-
+        // setup the population graph
         popGraph.StartCoroutine("UpdateGraph");
 
+        // setup the trade frequency graph
         LineGraph trades = graphs[0];
         trades.myDelegate = SimManager.instance.GetTradeFrequency;
         trades.StartCoroutine("UpdateGraph");
     }
 	
-	// Update is called once per frame
-	void Update () {
-		
-	}
 }

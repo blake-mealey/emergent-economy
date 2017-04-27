@@ -188,28 +188,34 @@ public class SimManager : MonoBehaviour {
         resources.Remove(resource);
 	}
 
+    // Gets the snapshot of the global trade ratio table at the given index
     public float[,] GetGlobalTradeRatioSnapshot(int index) {
         return globalTableSnapshots[index];
     }
 
+    // Gets the latest snapshot of the global trade ratio table
     public float[,] GetGlobalTradeRatioSnapshot() {
         return GetGlobalTradeRatioSnapshot(globalTableSnapshots.Count - 1);
     }
 
+    // Gets the number of snapshots of the global trade ratio table
     public int GetGlobalTradeRatioSnapshotsCount() {
         return globalTableSnapshots.Count;
     }
 
+    // Makes a snapshot (copy) of the global trade ratio table and stores it in the list of snapshots
     public float[,] MakeGlobalTradeRatioSnapshot() {
         float[,] snapshot = globalTable.resourceValues.Clone() as float[,];
         globalTableSnapshots.Add(snapshot);
         return snapshot;
     }
 
+    // Gets the number of dead resources
     public int GetDeadResourceCount() {
         return deadResources.Count;
     }
 
+    // Gets a dead resource from the list of them with the given index
     public GraphEventData GetDeadResource(int index) {
         return deadResources[index];
     }
@@ -243,6 +249,7 @@ public class InfoData {
     }
 }
 
+// An event data struct for saving and displaying events on charts
 public struct GraphEventData {
     public GraphEventData(int id, float time) {
         groupId = id;
