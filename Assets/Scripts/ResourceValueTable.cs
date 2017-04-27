@@ -2,15 +2,17 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+// The data structure that hold the ratios of value between each resource.
+// Note that this is not a Monobehaviour, rather it is just a regular class
 public class ResourceValueTable {
 
-    public float[,] resourceValues;
-    private float adjustmentRate = 0.2f; //How quickly value adjustments should be made
+    public float[,] resourceValues; // Contains the actual ratios
+    private float adjustmentRate = 0.2f; //How quickly value adjustments should be made.
 
 	// Use this for initialization
 	public ResourceValueTable () {
 
-        //Initial setup of the resource table
+        //Initial setup of the resource table based on the number of different groups in the system
         int temp = SimManager.instance.numberOfGroups;
         resourceValues = new float[temp, temp];
         for (int i = 0; i < temp; i++) {
@@ -24,7 +26,7 @@ public class ResourceValueTable {
     //Adjusts the table based on how quick the table reacts to trades
     public void UpdateValue (int resource1, float value1, int resource2, float value2) {
         float ratio = value2 / value1;
-        resourceValues[resource1, resource2] = resourceValues[resource1, resource2] * (1f - adjustmentRate) + ratio * adjustmentRate;
+        resourceValues[resource1, resource2] = resourceValues[resource1, resource2] * (1f - adjustmentRate) + ratio * adjustmentRate; // Need to update the ratio both ways. Provides convenience later.
         ratio = 1f / ratio;
         resourceValues[resource2, resource1] = resourceValues[resource2, resource1] * (1f - adjustmentRate) + ratio * adjustmentRate;
     }
@@ -41,6 +43,7 @@ public class ResourceValueTable {
 		return resourceValues[rid1, rid2];
 	}
 
+	//Prints out the contents of this trade table in a nice format
 	public void print() {
 		string mystring = "";
 		for (int i = 0; i < resourceValues.GetLength(0); i++) {

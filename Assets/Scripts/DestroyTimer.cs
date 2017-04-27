@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+// Destroys the attached gameobject after the given time. Used to remove explosion gameobjects.
 public class DestroyTimer : MonoBehaviour {
 
 	public float timeToDestory = 5f;
